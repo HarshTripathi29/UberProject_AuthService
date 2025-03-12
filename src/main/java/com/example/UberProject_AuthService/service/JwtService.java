@@ -17,85 +17,150 @@ import java.util.Map;
 import java.util.function.Function;
 import java.security.Key;
 
-
-
 @Service
 @PropertySource("classpath:application.properties")
 public class JwtService implements CommandLineRunner {
 
+    // JWT expiration time (in seconds) loaded from application.properties
     @Value("${jwt.expiry}")
     private int expiry;
 
+    // Secret key for signing JWT tokens loaded from application.properties
     @Value("${jwt.secret}")
     private String SECRET;
 
-    // this method creates a new jwt token for us based on the payload
-
-
+    /**
+     * Creates a new JWT token with the given payload and email.
+     *
+     * @param payload Additional claims (key-value pairs) to include in the token
+     * @param email   The subject of the token (typically the user's email)
+     * @return        A signed JWT token as a String
+     */
     public String createToken(Map<String, Object> payload, String email) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiry*1000L);
+        Date expiryDate = new Date(now.getTime() + expiry * 1000L); // Expiration time in milliseconds
+
+        // Generate the signing key
         SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+
+        // Build and return the JWT token
         return Jwts.builder()
-                .claims(payload)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(expiryDate)
-                .subject(email)
-                .signWith(key)
-                .compact();
+                .claims(payload)  // Add claims (payload)
+                .issuedAt(now)    // Set issued time
+                .expiration(expiryDate) // Set expiration time
+                .subject(email)  // Set subject (email)
+                .signWith(key)   // Sign with the secret key
+                .compact();      // Generate the final token
     }
+
+    /**
+     * Extracts all claims (payload data) from a JWT token.
+     *
+     * @param token JWT token
+     * @return      Claims object containing all data from the token
+     */
     public Claims extractAllPayloads(String token) {
         return Jwts
                 .parser()
-                .setSigningKey(getSignKey())
+                .setSigningKey(getSignKey()) // Use the secret key for verification
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseClaimsJws(token) // Parse and validate the token
+                .getBody(); // Extract the payload (claims)
     }
 
+    /**
+     * Extracts a specific claim from the JWT token using a function.
+     *
+     * @param token          JWT token
+     * @param claimsResolver Function to extract the required claim
+     * @param <T>            Generic type of the extracted claim
+     * @return               The extracted claim value
+     */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllPayloads(token);
         return claimsResolver.apply(claims);
     }
 
+    /**
+     * Extracts the expiration date from the JWT token.
+     *
+     * @param token JWT token
+     * @return      Expiration date of the token
+     */
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    /**
+     * Extracts the email (subject) from the JWT token.
+     *
+     * @param token JWT token
+     * @return      The email associated with the token
+     */
     public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
     /**
-     * This method checks if the token expiry was before the current time stamp or not ?
+     * Checks if the JWT token has expired.
+     *
      * @param token JWT token
-     * @return true if token is expired else false
+     * @return      true if expired, false otherwise
      */
     public Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        return extractExpiration(token).before(new Date()); // Check if expiration date is before current time
     }
 
+    /**
+     * Generates and returns the signing key used for JWT signing and verification.
+     *
+     * @return SecretKey for signing JWT tokens
+     */
     public Key getSignKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Validates a JWT token by checking:
+     * 1. If the email in the token matches the provided email
+     * 2. If the token has not expired
+     *
+     * @param token JWT token
+     * @param email Expected email (subject) in the token
+     * @return      true if valid, false otherwise
+     */
     public Boolean validateToken(String token, String email) {
         final String userEmailFetchedFromToken = extractEmail(token);
         return (userEmailFetchedFromToken.equals(email)) && !isTokenExpired(token);
     }
 
+    /**
+     * Extracts a specific key-value pair (claim) from the JWT token payload.
+     *
+     * @param token      JWT token
+     * @param payloadKey Key to fetch from the payload
+     * @return           The value associated with the given key
+     */
     public Object extractPayload(String token, String payloadKey) {
         Claims claim = extractAllPayloads(token);
-        return (Object) claim.get(payloadKey);
+        return claim.get(payloadKey);
     }
 
+    /**
+     * Runs a test scenario when the application starts.
+     * Generates a sample JWT token with test data and prints it.
+     */
     @Override
     public void run(String... args) throws Exception {
+        // Sample user details for testing
         Map<String, Object> mp = new HashMap<>();
         mp.put("email", "a@b.com");
         mp.put("phoneNumber", "9999999999");
-        String result = createToken(mp, "sanket");
-        System.out.println("Generated token is: " + result);
 
+        // Generate a JWT token for testing
+        String result = createToken(mp, "sanket");
+
+        // Print the generated token
+        System.out.println("Generated token is: " + result);
     }
 }
