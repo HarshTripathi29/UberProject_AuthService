@@ -21,12 +21,17 @@ public class AuthPassengerDetails extends Passenger implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return null;
     }
 
     @Override
     public String getUsername() {
         return this.username;
+    }
+
+    @Override
+    public String getPassword(){
+        return this.password;
     }
 
     // below set of methods are not much of concern
