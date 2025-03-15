@@ -54,6 +54,10 @@ public class JwtService implements CommandLineRunner {
                 .compact();      // Generate the final token
     }
 
+    public String createToken(String email){
+        return createToken(new HashMap<>(), email);
+    }
+
     /**
      * Extracts all claims (payload data) from a JWT token.
      *

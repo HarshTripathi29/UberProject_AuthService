@@ -22,6 +22,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        System.out.println("Searching for user: " + email);
         Optional<Passenger> passenger = passengerRepository.findPassengerByEmail(email);
         if(passenger.isPresent()){
             return new AuthPassengerDetails(passenger.get());

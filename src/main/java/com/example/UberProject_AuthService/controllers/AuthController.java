@@ -6,6 +6,7 @@ import com.example.UberProject_AuthService.dto.PassengerSignupRequestDto;
 import com.example.UberProject_AuthService.service.AuthService;
 import com.example.UberProject_AuthService.service.JwtService;
 import org.apache.coyote.Response;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,13 +14,17 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 // first signup and then signin separately
 @RestController
 @RequestMapping("/api/v1/auth")
 
 public class AuthController {
 
-    public final AuthenticationManager authenticationManager;
+    @Autowired
+    public AuthenticationManager authenticationManager;
 
     private AuthService authService;
 
@@ -48,10 +53,16 @@ public class AuthController {
     public ResponseEntity<?> signIn(@RequestBody AuthRequestDto authRequestDto){
 
         System.out.println("token recieved "+authRequestDto.getEmail()+" "+authRequestDto.getPassword());
+
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authRequestDto.getEmail(), authRequestDto.getPassword()));
         if(authentication.isAuthenticated()){
-            return new ResponseEntity<>("Successfull auth", HttpStatus.OK);
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("email", authRequestDto.getEmail());
+            // String jwtToken = jwtService.createToken(payload, authentication.getPrincipal().toString());
+
+            String jwtToken = jwtService.createToken(authRequestDto.getEmail());
+            return new ResponseEntity<>(jwtToken, HttpStatus.OK);
         }
-        return new ResponseEntity<>("Auth not Possible",HttpStatus.OK);
+        return new ResponseEntity<>("Auth not Possible",HttpStatus.UNAUTHORIZED);
     }
 }

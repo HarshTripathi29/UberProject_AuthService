@@ -34,7 +34,7 @@ public class SpringSecurity {
         return http
                 .csrf(csrf -> csrf.disable()) // Disables CSRF (not recommended for production)
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // Ensure leading slash "/"// Other requests require authentication
+                        .requestMatchers("/api/v1/auth/signup/*").permitAll() // Ensure leading slash "/"// Other requests require authentication
                 )
                 .build();
     }
