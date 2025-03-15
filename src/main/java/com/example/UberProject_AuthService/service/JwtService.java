@@ -36,6 +36,7 @@ public class JwtService implements CommandLineRunner {
      * @param email   The subject of the token (typically the user's email)
      * @return        A signed JWT token as a String
      */
+
     public String createToken(Map<String, Object> payload, String email) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiry * 1000L); // Expiration time in milliseconds
